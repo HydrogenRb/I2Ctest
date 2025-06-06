@@ -24,8 +24,7 @@ write_register 01 01
 write_register 00 00
 # NDAC = 1, MDAC = 2, dividers powered on
 write_register 0b 81
-#write_register 0c 82
-write_register 0c 84 #加了这一行，修改了MDAC的值，输出clk应该是3Mhz
+write_register 0c 84
 
 # NADC = 1, MADC = 4, dividers powered on 1000 0001
 write_register 12 81
@@ -38,7 +37,6 @@ write_register 13 84 #1000 0100
 write_register 19 07 #CDIV_CLKIN被设置成0111
 write_register 1a 81 #divider = 1 and power up
 write_register 34 10 #设置GPIO输出
-#write_register 34 1c #设置GPIO输出ADC_WCLK #备用
 
 # Select Page 1
 write_register 00 01
@@ -51,20 +49,12 @@ write_register 01 08
 # Power up AVDD LDO
 write_register 02 01
 
-# Set the input power-up time to 3.1ms (for ADC)
-write_register 47 32
-# Set the REF charging time to 40ms
-write_register 7b 01
+write_register 21 00     # MICBIAS off
 
-#设置ADC
-write_register 00 00 #Select Page 0
-write_register 37 0e #Change the MFP4
-write_register 38 02 #Change the MFP3
-write_register 53 23 #Set the ADC 左音量是+20dB
-write_register 54 23 #Set the ADC 右音量是+20dB
-write_register 41 30 #set ADC with +24dB
-write_register 42 30 #set ADC with +24dB
-# write_register 1d 10 #直接将ADC的output链接DAC的input，看看到ADC这一步是否正确
+# Set the input power-up time to 3.1ms (for ADC)
+#目前先关掉# write_register 47 32
+#目前先关掉# Set the REF charging time to 40ms
+write_register 7b 01
 
 # Select Page 1
 write_register 00 01
@@ -83,6 +73,30 @@ write_register 10 07 #set unmute and 29dB   00 011101
 write_register 11 07 #set unmute and 29dB
 write_register 12 07 #set unmute and 29dB
 write_register 13 07 #set unmute and 29dB
+
+# 这个部分开始处理ADC
+write_register 00 01
+write_register 34 80
+write_register 36 80
+write_register 37 80
+write_register 39 80
+write_register 3b 0f
+write_register 3C 0f     # 右 PGA + 47dB
+
+#先启动DAC 再处理ADC
+write_register 00 00
+write_register 51 c0 #dc #Change the ADC channel and power 11011100
+write_register 52 00 #Unmute the ADC 
+
+#设置ADC
+write_register 00 00 #Select Page 0
+#不用设置MISO# write_register 37 0e #Change the MFP4
+#不用设置MISO# write_register 38 02 #Change the MFP3
+write_register 53 23 #Set the ADC 左音量是+20dB
+write_register 54 23 #Set the ADC 右音量是+20dB
+write_register 41 30 #set DAC with +24dB
+write_register 42 30 #set DAC with +24dB
+
 # Select Page 0
 write_register 00 00
 # DAC => 0dB
@@ -94,8 +108,8 @@ write_register 3f d6
 write_register 40 00
 
 #先启动DAC 再处理ADC
-write_register 51 dc #Change the ADC channel and power 11011100
-write_register 52 00 #Unmute the ADC 
+#write_register 51 dc #Change the ADC channel and power 11011100
+#write_register 52 00 #Unmute the ADC 
 
 #读取ADC的flag
 echo "ADC的值是"
